@@ -61,10 +61,7 @@ func initLogger() {
 
 func loadAndValidEnvs() {
 	// Load .env file
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
+	_ = godotenv.Load()
 
 	requiredEnv := []string{"RABBITMQ_URL", "QUEUE_NAME", "EXCHANGE_NAME"}
 

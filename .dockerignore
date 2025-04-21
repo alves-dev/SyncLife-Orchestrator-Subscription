@@ -1,0 +1,27 @@
+# binários
+/orchestrator
+
+# módulos
+/vendor
+
+# config de IDE
+*.swp
+*.swo
+*.idea/
+*.vscode/
+
+# arquivos temporários
+*.log
+*.tmp
+
+# sistemas
+.DS_Store
+
+# Git
+.git
+.gitignore
+LICENSE
+README.md
+
+# dotenv
+.env
