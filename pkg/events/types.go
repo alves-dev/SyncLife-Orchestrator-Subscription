@@ -7,6 +7,10 @@ import (
 
 const EventTypeSubscriptionRequested = "orchestrator.subscriptions.requested.v1"
 
+type Deprecated struct {
+	Type string `json:"type"`
+}
+
 type Base struct {
 	SpecVersion string                 `json:"specversion"`
 	Type        string                 `json:"type"`

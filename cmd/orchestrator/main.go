@@ -5,6 +5,7 @@ import (
 	"orchestrator/internal/handler"
 	"orchestrator/internal/rabbit"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -21,16 +22,45 @@ func main() {
 	defer connection.Close()
 	defer channel.Close()
 
-	queueName := os.Getenv("QUEUE_NAME")
+	queueSubscription := os.Getenv("QUEUE_SUBSCRIPTION_NAME")
+	queueDeprecatedEvents := os.Getenv("QUEUE_DEPRECATED_EVENTS_NAME")
 
-	_, err = rabbit.CreateQueue(channel, queueName)
+	// Crete queues
+	_, err = rabbit.CreateQueue(channel, queueSubscription)
 	if err != nil {
 		log.Fatalf("fila não criada: %v", err)
 	}
 
+	_, err = rabbit.CreateQueue(channel, queueDeprecatedEvents)
+	if err != nil {
+		log.Fatalf("fila não criada: %v", err)
+	}
+
+	// Create binds
+	exchangeEvents := os.Getenv("EXCHANGE_EVENTS_NAME")
+	exchangeDeprecatedNames := os.Getenv("EXCHANGE_DEPRECATED_NAMES")
+
+	rabbit.BindQueue(channel, exchangeEvents, queueSubscription, "*")
+	for _, name := range strings.Split(exchangeDeprecatedNames, ",") {
+		rabbit.BindQueue(channel, name, queueDeprecatedEvents, "*")
+	}
+
 	// Start consuming
-	msgs, err := channel.Consume(
-		queueName,
+	msgsSubscription, err := channel.Consume(
+		queueSubscription,
+		"",
+		true,  // autoAck
+		false, // exclusive
+		false, // noLocal
+		false, // noWait
+		nil,
+	)
+	if err != nil {
+		log.Fatalf("Failed to register consumer: %v", err)
+	}
+
+	msgsDeprecatedEvents, err := channel.Consume(
+		queueDeprecatedEvents,
 		"",
 		true,  // autoAck
 		false, // exclusive
@@ -43,15 +73,19 @@ func main() {
 	}
 
 	// Consume loop
-	forever := make(chan bool)
 	go func() {
-		for d := range msgs {
-			handler.HandleMessage(d.Body, channel)
+		for d := range msgsSubscription {
+			handler.HandleSubscriptionEvent(d.Body, channel)
 		}
 	}()
 
-	log.Println("Listening for events...")
-	<-forever
+	go func() {
+		for d := range msgsDeprecatedEvents {
+			handler.HandleDeprecatedEvent(d.Body, channel)
+		}
+	}()
+
+	select {} // bloqueia pra sempre
 }
 
 func initLogger() {
@@ -63,7 +97,7 @@ func loadAndValidEnvs() {
 	// Load .env file
 	_ = godotenv.Load()
 
-	requiredEnv := []string{"RABBITMQ_URL", "QUEUE_NAME", "EXCHANGE_NAME"}
+	requiredEnv := []string{"RABBITMQ_URL", "QUEUE_SUBSCRIPTION_NAME", "QUEUE_DEPRECATED_EVENTS_NAME", "EXCHANGE_EVENTS_NAME", "EXCHANGE_DEPRECATED_NAMES"}
 
 	for _, key := range requiredEnv {
 		if os.Getenv(key) == "" {

@@ -3,7 +3,6 @@ package rabbit
 import (
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/streadway/amqp"
 )
@@ -24,9 +23,7 @@ func CreateQueue(ch *amqp.Channel, queueName string) (amqp.Queue, error) {
 	return queue, nil
 }
 
-func BindQueue(ch *amqp.Channel, queueName, routingKey string) error {
-	exchangeName := os.Getenv("EXCHANGE_NAME")
-
+func BindQueue(ch *amqp.Channel, exchangeName, queueName, routingKey string) error {
 	err := ch.QueueBind(
 		queueName,    // nome da fila
 		routingKey,   // routing key
