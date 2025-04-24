@@ -48,7 +48,7 @@ func main() {
 	// Start consuming
 	msgsSubscription, err := channel.Consume(
 		queueSubscription,
-		"",
+		"consumer-tag-subscription",
 		true,  // autoAck
 		false, // exclusive
 		false, // noLocal
@@ -61,7 +61,7 @@ func main() {
 
 	msgsDeprecatedEvents, err := channel.Consume(
 		queueDeprecatedEvents,
-		"",
+		"consumer-tag-deprecated-events",
 		true,  // autoAck
 		false, // exclusive
 		false, // noLocal

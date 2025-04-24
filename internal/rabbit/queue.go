@@ -8,6 +8,7 @@ import (
 )
 
 func CreateQueue(ch *amqp.Channel, queueName string) (amqp.Queue, error) {
+	_ = deleteQueue(queueName)
 	queue, err := ch.QueueDeclare(
 		queueName,
 		true,  // durable
@@ -35,4 +36,27 @@ func BindQueue(ch *amqp.Channel, exchangeName, queueName, routingKey string) err
 		return fmt.Errorf("failed to bind queue: %w", err)
 	}
 	return nil
+}
+
+func deleteQueue(queueName string) bool {
+	channel, connection, _ := GetChannel()
+	defer connection.Close()
+	defer channel.Close()
+
+	count, err := channel.QueueDelete(
+		queueName,
+		false, // ifUnused: só deleta se não tiver consumidores
+		true,  // ifEmpty: só deleta se não tiver mensagens
+		false, // noWait
+	)
+	if err != nil {
+		fmt.Printf("failed to delete queue: %s\n", queueName)
+		return false
+	}
+
+	if count > 0 {
+		fmt.Printf("Events deleted in queue %s: %d\n", queueName, count)
+	}
+
+	return true
 }

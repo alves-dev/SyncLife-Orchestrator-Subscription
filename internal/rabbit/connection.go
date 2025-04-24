@@ -10,7 +10,11 @@ import (
 func GetChannel() (*amqp.Channel, *amqp.Connection, error) {
 	rabbitURL := os.Getenv("RABBITMQ_URL")
 
-	conn, err := amqp.Dial(rabbitURL)
+	conn, err := amqp.DialConfig(rabbitURL, amqp.Config{
+		Properties: amqp.Table{
+			"connection_name": "orchestrator-subscription",
+		},
+	})
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to connect to RabbitMQ: %s", err)
 	}
