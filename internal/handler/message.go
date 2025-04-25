@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"log"
+	"orchestrator/internal/counter"
 	"orchestrator/internal/rabbit"
 	"orchestrator/pkg/events"
 	"os"
@@ -10,14 +11,17 @@ import (
 	"github.com/streadway/amqp"
 )
 
+var eventCounter = counter.NewDailyCounter()
+
 func HandleCountEvent(msg []byte, ch *amqp.Channel) {
 	var event events.Deprecated
 	err := json.Unmarshal(msg, &event)
 	if err != nil {
+		eventCounter.Increment("")
 		return
 	}
 
-	log.Printf("[HandleCountEvent] More one event: %+v", event.Type)
+	eventCounter.Increment(event.Type)
 }
 
 func HandleSubscriptionEvent(msg []byte, ch *amqp.Channel) {
@@ -53,7 +57,7 @@ func HandleDeprecatedEvent(msg []byte, ch *amqp.Channel) {
 	var event events.Deprecated
 	err := json.Unmarshal(msg, &event)
 	if err != nil {
-		log.Printf("[HandleDeprecatedEvent] Failed to parse event envelope: %v", err)
+		log.Printf("[HandleDeprecatedEvent] Received deprecated Event")
 		return
 	}
 

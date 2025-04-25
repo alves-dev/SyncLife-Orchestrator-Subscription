@@ -92,7 +92,7 @@ func main() {
 
 func initLogger() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	log.SetPrefix("[orchestrator] ")
+	// log.SetPrefix("[orchestrator] ")
 }
 
 func loadAndValidEnvs() {
