@@ -40,9 +40,9 @@ func main() {
 	exchangeEvents := os.Getenv("EXCHANGE_EVENTS_NAME")
 	exchangeDeprecatedNames := os.Getenv("EXCHANGE_DEPRECATED_NAMES")
 
-	rabbit.BindQueue(channel, exchangeEvents, queueSubscription, "*")
+	rabbit.BindQueue(channel, exchangeEvents, queueSubscription, "#")
 	for _, name := range strings.Split(exchangeDeprecatedNames, ",") {
-		rabbit.BindQueue(channel, name, queueDeprecatedEvents, "*")
+		rabbit.BindQueue(channel, name, queueDeprecatedEvents, "#")
 	}
 
 	// Start consuming
@@ -75,12 +75,14 @@ func main() {
 	// Consume loop
 	go func() {
 		for d := range msgsSubscription {
+			handler.HandleCountEvent(d.Body, channel)
 			handler.HandleSubscriptionEvent(d.Body, channel)
 		}
 	}()
 
 	go func() {
 		for d := range msgsDeprecatedEvents {
+			handler.HandleCountEvent(d.Body, channel)
 			handler.HandleDeprecatedEvent(d.Body, channel)
 		}
 	}()

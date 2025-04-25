@@ -20,7 +20,14 @@ func CreateQueue(ch *amqp.Channel, queueName string) (amqp.Queue, error) {
 	if err != nil {
 		return queue, fmt.Errorf("failed to declare queue: %w", err)
 	}
-	log.Printf("fila criada: %s\n", queueName)
+
+	msg := fmt.Sprintf(
+		"--- Fila criada:\n"+
+			"    - queueName: %s\n",
+		queueName,
+	)
+	log.Print(msg)
+
 	return queue, nil
 }
 
@@ -35,6 +42,17 @@ func BindQueue(ch *amqp.Channel, exchangeName, queueName, routingKey string) err
 	if err != nil {
 		return fmt.Errorf("failed to bind queue: %w", err)
 	}
+	msg := fmt.Sprintf(
+		"--- Bind criada:\n"+
+			"    - exchangeName: %s\n"+
+			"    - routingKey: %s\n"+
+			"    - queueName: %s\n",
+		exchangeName,
+		routingKey,
+		queueName,
+	)
+	log.Print(msg)
+
 	return nil
 }
 

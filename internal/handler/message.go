@@ -10,45 +10,52 @@ import (
 	"github.com/streadway/amqp"
 )
 
+func HandleCountEvent(msg []byte, ch *amqp.Channel) {
+	var event events.Deprecated
+	err := json.Unmarshal(msg, &event)
+	if err != nil {
+		return
+	}
+
+	log.Printf("[HandleCountEvent] More one event: %+v", event.Type)
+}
+
 func HandleSubscriptionEvent(msg []byte, ch *amqp.Channel) {
 	var rawEvent events.Base
 	err := json.Unmarshal(msg, &rawEvent)
 	if err != nil {
-		log.Printf("Failed to parse event envelope: %v", err)
+		log.Printf("[HandleSubscriptionEvent] Failed to parse event envelope: %v", err)
+		return
+	}
+
+	if rawEvent.Type != events.EventTypeSubscriptionRequested {
 		return
 	}
 
 	var subscription events.SubscriptionRequestedV1
-	switch rawEvent.Type {
-	case events.EventTypeSubscriptionRequested:
-		err := json.Unmarshal(rawEvent.Data, &subscription)
-		if err != nil {
-			log.Printf("Failed to parse data for subscription event: %v", err)
-			return
-		}
-		log.Printf("Subscription request received: %+v\n", subscription)
-
-	default:
-		log.Printf("Unhandled event type: %s", rawEvent.Type)
+	err = json.Unmarshal(rawEvent.Data, &subscription)
+	if err != nil {
+		log.Printf("[HandleSubscriptionEvent] Failed to parse data for subscription event: %v", err)
+		return
 	}
+
+	log.Printf("[HandleSubscriptionEvent] Received Event: %+v\n", subscription)
 
 	rabbit.CreateQueue(ch, subscription.QueueName)
 
-	exchangeName := os.Getenv("QUEUE_SUBSCRIPTION_NAME")
+	exchangeName := os.Getenv("EXCHANGE_EVENTS_NAME")
 	for _, key := range subscription.Subscriptions.EventTypes {
 		rabbit.BindQueue(ch, exchangeName, subscription.QueueName, key)
 	}
-
-	log.Printf("✅ Received Event:\n%+v\n", subscription)
 }
 
 func HandleDeprecatedEvent(msg []byte, ch *amqp.Channel) {
 	var event events.Deprecated
 	err := json.Unmarshal(msg, &event)
 	if err != nil {
-		log.Printf("Failed to parse event envelope: %v", err)
+		log.Printf("[HandleDeprecatedEvent] Failed to parse event envelope: %v", err)
 		return
 	}
 
-	log.Printf("Received deprecated Event: %+v", event.Type)
+	log.Printf("[HandleDeprecatedEvent] Received deprecated Event: %+v", event.Type)
 }
